@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<meta name="apple-mobile-web-app-title" content="Budżet"/>
+<title>Budżet</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #000;
+  --bg2: #0a0a0a;
+  --surface: #111;
+  --surface2: #1a1a1a;
+  --surface3: #222;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #fff;
+  --text2: rgba(255,255,255,0.6);
+  --text3: rgba(255,255,255,0.35);
+  --accent: #fff;
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --blue: #60a5fa;
+  --r: 14px;
+  --r-sm: 10px;
+  --safe-top: env(safe-area-inset-top, 44px);
+  --safe-bot: env(safe-area-inset-bottom, 20px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overscroll-behavior: none; -webkit-font-smoothing: antialiased; }
+
+/* SPLASH */
+#splash {
+  position: fixed; inset: 0; background: #000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  z-index: 9999; animation: splashOut 0.4s ease 1.6s forwards;
+}
+.s-icon { font-size: 52px; animation: sIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.2s both; }
+.s-title { font-size: 28px; font-weight: 800; letter-spacing: -1px; animation: sFade 0.4s ease 0.5s both; }
+.s-sub { font-size: 13px; color: rgba(255,255,255,0.4); animation: sFade 0.4s ease 0.7s both; }
+@keyframes sIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+@keyframes sFade { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+@keyframes splashOut { to{opacity:0;pointer-events:none} }
+
+/* APP */
+#app { display: flex; flex-direction: column; height: 100vh; max-width: 430px; margin: 0 auto; }
+
+/* HEADER */
+.hdr {
+  padding: calc(var(--safe-top) + 8px) 20px 0;
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid var(--border);
+}
+.hdr-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.logo { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; }
+.logo span { color: rgba(255,255,255,0.3); }
+.mnav { display: flex; align-items: center; gap: 6px; }
+.mbtn {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: #fff; font-size: 16px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.1s;
+}
+.mbtn:active { transform: scale(0.88); }
+.mlbl { font-size: 13px; font-weight: 600; color: var(--text2); min-width: 120px; text-align: center; }
+
+/* TABS */
+.tabs {
+  display: flex; gap: 2px; padding: 10px 0 0;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex-shrink: 0; padding: 8px 14px; border-radius: 8px 8px 0 0;
+  font-family: 'Inter'; font-size: 12px; font-weight: 600;
+  background: transparent; border: none; color: var(--text3);
+  cursor: pointer; transition: all 0.2s; border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.tab.active { color: #fff; border-bottom-color: #fff; }
+
+/* SCROLL */
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 16px calc(var(--safe-bot) + 90px); }
+.scroll::-webkit-scrollbar { display: none; }
+
+/* PAGE */
+.page { display: none; flex-direction: column; gap: 10px; }
+.page.active { display: flex; animation: pgIn 0.25s ease; }
+@keyframes pgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+/* CARD */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; overflow: hidden;
+}
+.card-title {
+  font-size: 10px; font-weight: 700; color: var(--text3);
+  letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px;
+}
+
+/* HERO */
+.hero {
+  background: #fff; border-radius: var(--r); padding: 20px;
+  color: #000; position: relative; overflow: hidden;
+}
+.hero.deficit { background: var(--surface); color: #fff; border: 1px solid var(--red); }
+.hero-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: 0.5; margin-bottom: 8px; }
+.hero-amount { font-size: 44px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+.hero-sub { font-size: 12px; opacity: 0.5; margin-top: 6px; }
+.hero-badge {
+  position: absolute; top: 16px; right: 16px;
+  padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700;
+  background: rgba(0,0,0,0.12); color: #000;
+}
+.hero.deficit .hero-badge { background: rgba(248,113,113,0.2); color: var(--red); }
+
+/* STAT GRID */
+.sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sbox { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px; }
+.sbox-label { font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+.sbox-val { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+
+/* PROGRESS */
+.pbar-item { margin-bottom: 12px; }
+.pbar-item:last-child { margin-bottom: 0; }
+.pbar-hdr { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.pbar-name { font-size: 12px; color: var(--text2); font-weight: 500; }
+.pbar-val { font-size: 12px; font-weight: 700; color: var(--text2); }
+.pbar-track { height: 4px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
+.pbar-fill { height: 100%; border-radius: 99px; transition: width 0.7s ease; }
+
+/* INPUT */
+.irow { margin-bottom: 10px; }
+.ilabel { font-size: 11px; color: var(--text3); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; display: block; }
+.inp {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--r-sm); padding: 13px 14px;
+  color: #fff; font-family: 'Inter'; font-size: 16px; font-weight: 500;
+  outline: none; -webkit-appearance: none; transition: border-color 0.2s;
+}
+.inp:focus { border-color: rgba(255,255,255,0.4); }
+.inp::placeholder { color: var(--text3); }
+
+/* COST ROW */
+.crow { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+.cname { flex: 1; }
+.camt { width: 95px; }
+.dbtn {
+  width: 36px; height: 44px; border-radius: var(--r-sm);
+  background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.15);
+  color: var(--red); font-size: 14px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; transition: all 0.1s;
+}
+.dbtn:active { transform: scale(0.9); }
+
+/* ADD BTN */
+.abtn {
+  width: 100%; padding: 11px; border-radius: var(--r-sm); margin-top: 4px;
+  background: transparent; border: 1px dashed rgba(255,255,255,0.15);
+  color: var(--text3); font-family: 'Inter'; font-size: 12px; font-weight: 600;
+  cursor: pointer; letter-spacing: 0.3px; transition: all 0.15s;
+}
+.abtn:active { background: var(--surface2); color: var(--text2); }
+
+/* DIVIDER */
+.div { height: 1px; background: var(--border); margin: 12px 0; }
+
+/* SUM ROW */
+.srow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.srow:last-child { margin-bottom: 0; }
+.srow-label { font-size: 13px; color: var(--text2); }
+.srow-val { font-size: 13px; font-weight: 700; }
+.srow.big .srow-label { font-size: 14px; color: #fff; font-weight: 600; }
+.srow.big .srow-val { font-size: 16px; }
+
+/* BOTTOM BAR */
+.bbar {
+  position: fixed; bottom: 0; left: 0; right: 0; max-width: 430px; margin: 0 auto;
+  background: rgba(0,0,0,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding: 10px 16px calc(var(--safe-bot) + 8px);
+  display: flex; gap: 8px; z-index: 100;
+}
+.bbtn {
+  flex: 1; padding: 14px; border-radius: var(--r-sm);
+  font-family: 'Inter'; font-size: 13px; font-weight: 700;
+  cursor: pointer; border: none; transition: all 0.15s; letter-spacing: -0.2px;
+}
+.bbtn:active { transform: scale(0.97); opacity: 0.8; }
+.bbtn-w { background: #fff; color: #000; }
+.bbtn-d { background: var(--surface2); color: #fff; border: 1px solid var(--border2); }
+
+/* AI CHAT */
+.chat-wrap { display: flex; flex-direction: column; gap: 10px; }
+.chat-bubble {
+  max-width: 88%; padding: 12px 14px; border-radius: 14px; font-size: 14px; line-height: 1.5;
+}
+.chat-bubble.user { background: #fff; color: #000; align-self: flex-end; border-bottom-right-radius: 4px; font-weight: 500; }
+.chat-bubble.ai { background: var(--surface2); color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid var(--border2); }
+.chat-bubble.ai.loading { color: var(--text3); }
+.chat-input-row { display: flex; gap: 8px; margin-top: 4px; }
+.chat-inp {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 12px 14px;
+  color: #fff; font-family: 'Inter'; font-size: 14px; outline: none;
+  -webkit-appearance: none;
+}
+.chat-inp:focus { border-color: rgba(255,255,255,0.3); }
+.chat-inp::placeholder { color: var(--text3); }
+.chat-send {
+  width: 46px; height: 46px; border-radius: 12px; background: #fff; border: none;
+  color: #000; font-size: 18px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.chat-send:active { transform: scale(0.9); }
+.quick-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.qbtn {
+  padding: 7px 12px; border-radius: 99px; font-size: 12px; font-weight: 600;
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text2); cursor: pointer; font-family: 'Inter';
+  white-space: nowrap; transition: all 0.15s;
+}
+.qbtn:active { background: var(--surface3); color: #fff; }
+
+/* REPORT */
+.report-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 20px;
+}
+.report-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.report-title { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+.report-month { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.report-divider { height: 1px; background: var(--border2); margin: 14px 0; }
+.report-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.report-row-label { font-size: 13px; color: var(--text2); }
+.report-row-val { font-size: 13px; font-weight: 700; }
+.report-big { font-size: 28px; font-weight: 900; letter-spacing: -1px; }
+.report-hint { font-size: 11px; color: var(--text3); text-align: center; margin-top: 8px; }
+
+/* CARD SHORTCUT */
+.shortcut-info { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--r); padding: 16px; }
+.step { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+.step:last-child { margin-bottom: 0; }
+.step-num { width: 26px; height: 26px; border-radius: 99px; background: #fff; color: #000; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.step-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+.step-text strong { color: #fff; }
+
+/* NOTE */
+.ntarea {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--r-sm); padding: 13px 14px;
+  color: #fff; font-family: 'Inter'; font-size: 14px;
+  outline: none; resize: none; min-height: 80px; line-height: 1.5;
+  -webkit-appearance: none;
+}
+.ntarea:focus { border-color: rgba(255,255,255,0.3); }
+
+/* REMINDER */
+.modal-ov {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  z-index: 500; display: flex; align-items: flex-end;
+}
+.modal {
+  width: 100%; max-width: 430px; margin: 0 auto;
+  background: #111; border-radius: 24px 24px 0 0;
+  padding: 20px 24px calc(var(--safe-bot) + 24px);
+  border-top: 1px solid var(--border2);
+  animation: mUp 0.35s cubic-bezier(0.34,1.2,0.64,1);
+}
+@keyframes mUp { from{transform:translateY(100%)} to{transform:none} }
+.modal-handle { width: 32px; height: 3px; border-radius: 99px; background: rgba(255,255,255,0.2); margin: 0 auto 20px; }
+.modal-icon { font-size: 40px; text-align: center; margin-bottom: 10px; }
+.modal-title { font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 6px; }
+.modal-text { font-size: 13px; color: var(--text2); text-align: center; line-height: 1.5; margin-bottom: 22px; }
+.modal-btn { width: 100%; padding: 15px; border-radius: var(--r-sm); background: #fff; color: #000; font-family: 'Inter'; font-size: 15px; font-weight: 800; border: none; cursor: pointer; }
+
+/* QUICK ADD MODAL */
+.qa-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  z-index: 500; display: flex; align-items: flex-end;
+}
+.qa-inner {
+  width: 100%; max-width: 430px; margin: 0 auto;
+  background: #111; border-radius: 24px 24px 0 0;
+  padding: 20px 24px calc(var(--safe-bot) + 24px);
+  border-top: 1px solid var(--border2);
+  animation: mUp 0.35s cubic-bezier(0.34,1.2,0.64,1);
+}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="s-icon">💼</div>
+  <div class="s-title">Budżet</div>
+  <div class="s-sub">Twoje finanse pod kontrolą</div>
+</div>
+
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="logo">budż<span>et</span></div>
+      <div class="mnav">
+        <button class="mbtn" onclick="changeMonth(-1)">‹</button>
+        <div class="mlbl" id="monthLabel">—</div>
+        <button class="mbtn" onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('overview')">Przegląd</button>
+      <button class="tab" onclick="switchTab('income')">Dochód</button>
+      <button class="tab" onclick="switchTab('fixed')">Stałe</button>
+      <button class="tab" onclick="switchTab('variable')">Zmienne</button>
+      <button class="tab" onclick="switchTab('ai')">AI Chat</button>
+      <button class="tab" onclick="switchTab('report')">Raport</button>
+      <button class="tab" onclick="switchTab('card')">Karta +</button>
+    </div>
+  </div>
+
+  <div class="scroll">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="hero" id="hero-card">
+        <div class="hero-label">Pozostaje po wydatkach</div>
+        <div class="hero-amount" id="ov-rem">0,00 zł</div>
+        <div class="hero-sub">z <span id="ov-sal-sub">0,00 zł</span> wynagrodzenia</div>
+        <div class="hero-badge" id="ov-badge">OK</div>
+      </div>
+
+      <div class="sgrid">
+        <div class="sbox"><div class="sbox-label">Koszty stałe</div><div class="sbox-val" style="color:var(--yellow)" id="ov-fixed">—</div></div>
+        <div class="sbox"><div class="sbox-label">Koszty zmienne</div><div class="sbox-val" style="color:var(--red)" id="ov-var">—</div></div>
+        <div class="sbox"><div class="sbox-label">Łącznie wydatki</div><div class="sbox-val" style="color:var(--red)" id="ov-total">—</div></div>
+        <div class="sbox"><div class="sbox-label">Odłożono</div><div class="sbox-val" style="color:var(--blue)" id="ov-saved">—</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Rozkład budżetu</div>
+        <div id="pbars"><div style="font-size:12px;color:var(--text3);text-align:center;padding:8px 0">Wpisz wynagrodzenie</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Podsumowanie</div>
+        <div class="srow"><span class="srow-label">Wynagrodzenie</span><span class="srow-val" style="color:var(--green)" id="sum-sal">—</span></div>
+        <div class="srow"><span class="srow-label">− Koszty stałe</span><span class="srow-val" style="color:var(--yellow)" id="sum-fix">—</span></div>
+        <div class="srow"><span class="srow-label">− Koszty zmienne</span><span class="srow-val" style="color:var(--red)" id="sum-var">—</span></div>
+        <div class="div"></div>
+        <div class="srow big"><span class="srow-label">= Pozostało</span><span class="srow-val" id="sum-rem">—</span></div>
+        <div class="srow"><span class="srow-label">− Odłożono</span><span class="srow-val" style="color:var(--blue)" id="sum-sav">—</span></div>
+        <div class="div"></div>
+        <div class="srow big"><span class="srow-label">= Na życie</span><span class="srow-val" id="sum-free">—</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Notatka</div>
+        <textarea class="ntarea" id="note-area" placeholder="Zapisz uwagi..." oninput="saveNote()"></textarea>
+      </div>
+    </div>
+
+    <!-- INCOME -->
+    <div class="page" id="page-income">
+      <div class="card">
+        <div class="card-title">Wynagrodzenie netto</div>
+        <div class="irow">
+          <label class="ilabel">Kwota (zł)</label>
+          <input class="inp" type="number" inputmode="decimal" placeholder="np. 5500" id="sal-inp" oninput="saveSalary()"/>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Oszczędności tego miesiąca</div>
+        <div class="irow">
+          <label class="ilabel">Kwota odłożona (zł)</label>
+          <input class="inp" type="number" inputmode="decimal" placeholder="np. 500" id="sav-inp" oninput="saveSaved()"/>
+        </div>
+        <div id="sav-pct" style="font-size:12px;color:var(--blue);margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <!-- FIXED -->
+    <div class="page" id="page-fixed">
+      <div class="card">
+        <div class="card-title">Koszty stałe</div>
+        <div id="fixed-list"></div>
+        <button class="abtn" onclick="addCost('fixed')">+ Dodaj koszt stały</button>
+        <div class="div"></div>
+        <div class="srow big"><span class="srow-label">Suma</span><span class="srow-val" style="color:var(--yellow)" id="fix-total">0,00 zł</span></div>
+      </div>
+    </div>
+
+    <!-- VARIABLE -->
+    <div class="page" id="page-variable">
+      <div class="card">
+        <div class="card-title">Koszty zmienne</div>
+        <div id="var-list"></div>
+        <button class="abtn" onclick="addCost('variable')">+ Dodaj koszt zmienny</button>
+        <div class="div"></div>
+        <div class="srow big"><span class="srow-label">Suma</span><span class="srow-val" style="color:var(--red)" id="var-total">0,00 zł</span></div>
+      </div>
+    </div>
+
+    <!-- AI CHAT -->
+    <div class="page" id="page-ai">
+      <div class="card">
+        <div class="card-title">Szybkie pytania</div>
+        <div class="quick-btns">
+          <button class="qbtn" onclick="quickQ('Ile mogę wydać w tym miesiącu?')">Ile mogę wydać?</button>
+          <button class="qbtn" onclick="quickQ('Ile powinienem odkładać co miesiąc?')">Ile odkładać?</button>
+          <button class="qbtn" onclick="quickQ('Jak wygląda mój budżet?')">Ocena budżetu</button>
+          <button class="qbtn" onclick="quickQ('Jak oszczędzić więcej?')">Jak oszczędzać?</button>
+          <button class="qbtn" onclick="quickQ('Czy wydaję za dużo na koszty stałe?')">Koszty stałe OK?</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Chat z AI</div>
+        <div class="chat-wrap" id="chat-wrap">
+          <div class="chat-bubble ai">Cześć! Jestem Twoim asystentem finansowym. Wpisz pytanie o swój budżet lub użyj skrótów powyżej. 💬</div>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="chat-input-row">
+            <input class="chat-inp" id="chat-inp" placeholder="Wpisz pytanie..." onkeydown="if(event.key==='Enter')sendChat()"/>
+            <button class="chat-send" onclick="sendChat()">↑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORT -->
+    <div class="page" id="page-report">
+      <div class="report-card" id="report-content">
+        <div class="report-header">
+          <div>
+            <div class="report-title">Raport miesięczny</div>
+            <div class="report-month" id="rep-month">—</div>
+          </div>
+          <div style="font-size:28px">📊</div>
+        </div>
+
+        <div class="report-divider"></div>
+        <div class="report-row"><span class="report-row-label">💰 Wynagrodzenie</span><span class="report-row-val" style="color:var(--green)" id="rep-sal">—</span></div>
+        <div class="report-row"><span class="report-row-label">🏠 Koszty stałe</span><span class="report-row-val" style="color:var(--yellow)" id="rep-fix">—</span></div>
+        <div class="report-row"><span class="report-row-label">🛒 Koszty zmienne</span><span class="report-row-val" style="color:var(--red)" id="rep-var">—</span></div>
+        <div class="report-row"><span class="report-row-label">📉 Łączne wydatki</span><span class="report-row-val" id="rep-total">—</span></div>
+        <div class="report-divider"></div>
+        <div style="text-align:center;margin:16px 0">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Pozostało po wydatkach</div>
+          <div class="report-big" id="rep-rem">—</div>
+        </div>
+        <div class="report-divider"></div>
+        <div class="report-row"><span class="report-row-label">🏦 Odłożono</span><span class="report-row-val" style="color:var(--blue)" id="rep-sav">—</span></div>
+        <div class="report-row"><span class="report-row-label">% oszczędności</span><span class="report-row-val" id="rep-pct">—</span></div>
+        <div class="report-row"><span class="report-row-label">💙 Na życie zostaje</span><span class="report-row-val" id="rep-free">—</span></div>
+        <div class="report-divider"></div>
+        <div id="rep-costs" style="font-size:12px;color:var(--text3);line-height:1.8;"></div>
+      </div>
+      <div class="report-hint">📸 Zrób zrzut ekranu aby zapisać raport</div>
+    </div>
+
+    <!-- KARTA + -->
+    <div class="page" id="page-card">
+      <div class="card">
+        <div class="card-title">Szybkie dodawanie wydatku kartą</div>
+        <div class="irow">
+          <label class="ilabel">Nazwa transakcji</label>
+          <input class="inp" id="card-name" placeholder="np. Biedronka, Allegro..." type="text"/>
+        </div>
+        <div class="irow">
+          <label class="ilabel">Kwota (zł)</label>
+          <input class="inp" id="card-amt" placeholder="np. 89,99" type="number" inputmode="decimal"/>
+        </div>
+        <div class="irow">
+          <label class="ilabel">Typ wydatku</label>
+          <select class="inp" id="card-type" style="color:#fff">
+            <option value="variable">Koszt zmienny</option>
+            <option value="fixed">Koszt stały</option>
+          </select>
+        </div>
+        <button class="bbtn bbtn-w" style="width:100%;margin-top:8px;border-radius:var(--r-sm);padding:14px" onclick="addCardExpense()">+ Dodaj do wydatków</button>
+        <div id="card-feedback" style="font-size:13px;color:var(--green);text-align:center;margin-top:10px;min-height:20px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Skrót iOS — dodaj do ekranu głównego</div>
+        <div class="shortcut-info">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Otwórz aplikację <strong>Skróty</strong> na iPhone</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Kliknij <strong>+</strong> → nowy skrót → dodaj akcję <strong>„Otwórz URL"</strong></div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">Wpisz URL: <strong id="card-url" style="color:var(--blue);word-break:break-all;font-size:12px;">—</strong></div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text">Kliknij strzałkę przy skrócie → <strong>„Dodaj do ekranu głównego"</strong> → ustaw ikonę 💳</div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-text">Po każdym zakupie kartą — kliknij ikonę na ekranie, wpisz kwotę i dodaj jednym tapnięciem</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- scroll -->
+
+  <div class="bbar">
+    <button class="bbtn bbtn-d" onclick="switchTab('overview')" id="bbar-left">📊 Przegląd</button>
+    <button class="bbtn bbtn-w" onclick="mainAction()" id="bbar-right">💳 Dodaj wydatek</button>
+  </div>
+</div>
+
+<!-- REMINDER -->
+<div class="modal-ov" id="rem-modal" style="display:none" onclick="dismissRem()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-icon">📅</div>
+    <div class="modal-title">Koniec miesiąca!</div>
+    <div class="modal-text">Uzupełnij dane budżetowe, aby mieć pełny obraz finansów i lepsze sugestie AI.</div>
+    <button class="modal-btn" onclick="dismissRem()">Uzupełnię dane ✓</button>
+  </div>
+</div>
+
+<!-- QUICK ADD -->
+<div class="qa-modal" id="qa-modal" style="display:none" onclick="closeQA()">
+  <div class="qa-inner" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:16px">💳 Szybki wydatek kartą</div>
+    <div class="irow">
+      <label class="ilabel">Nazwa</label>
+      <input class="inp" id="qa-name" placeholder="np. Żabka, tankowanie..." type="text"/>
+    </div>
+    <div class="irow">
+      <label class="ilabel">Kwota (zł)</label>
+      <input class="inp" id="qa-amt" placeholder="0,00" type="number" inputmode="decimal"/>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="bbtn bbtn-d" style="flex:1" onclick="closeQA()">Anuluj</button>
+      <button class="bbtn bbtn-w" style="flex:1" onclick="confirmQA()">Dodaj ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS=['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+const DEF_FIXED=[{id:1,name:'Czynsz / Kredyt',amount:''},{id:2,name:'Prąd',amount:''},{id:3,name:'Gaz',amount:''},{id:4,name:'Internet',amount:''},{id:5,name:'Telefon',amount:''}];
+
+let curM=new Date().getMonth(), curY=new Date().getFullYear();
+let allData={}, curTab='overview';
+let chatHistory=[];
+
+function mk(){return `${curY}-${String(curM+1).padStart(2,'0')}`;}
+function ld(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+function gid(id){return document.getElementById(id);}
+function fmt(n){return Number(n||0).toLocaleString('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2})+' zł';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function getMD(){
+  return allData[mk()]||{salary:'',savedAmount:'',note:'',
+    fixedCosts:DEF_FIXED.map(f=>({...f,amount:''})),variableCosts:[]};
+}
+function setMD(patch){
+  allData[mk()]={...getMD(),...patch};
+  sv('bgt3',allData); recalc();
+}
+
+function recalc(){
+  const d=getMD();
+  const sal=parseFloat(d.salary)||0;
+  const fix=(d.fixedCosts||[]).reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+  const vari=(d.variableCosts||[]).reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+  const tot=fix+vari;
+  const rem=sal-tot;
+  const sav=parseFloat(d.savedAmount)||0;
+  const free=rem-sav;
+  const pct=sal>0?(sav/sal*100).toFixed(1):0;
+  const deficit=rem<0;
+
+  // Hero
+  const hero=gid('hero-card');
+  if(hero){hero.className='hero'+(deficit?' deficit':'');}
+  setText('ov-rem',fmt(Math.abs(rem)));
+  const remEl=gid('ov-rem');
+  if(remEl)remEl.style.color=deficit?'var(--red)':(hero&&!deficit?'#000':'#fff');
+  setText('ov-sal-sub',fmt(sal));
+  const badge=gid('ov-badge');
+  if(badge){badge.textContent=deficit?'⚠ Deficyt':'✓ OK';badge.style.background=deficit?'rgba(248,113,113,0.15)':'rgba(0,0,0,0.12)';badge.style.color=deficit?'var(--red)':(hero&&!deficit?'#000':'#fff');}
+  setText('ov-fixed',fmt(fix));setText('ov-var',fmt(vari));setText('ov-total',fmt(tot));setText('ov-saved',fmt(sav));
+  setText('sum-sal',fmt(sal));setText('sum-fix',fmt(fix));setText('sum-var',fmt(vari));setText('sum-rem',fmt(rem));setText('sum-sav',fmt(sav));setText('sum-free',fmt(free));
+  const srEl=gid('sum-rem');if(srEl)srEl.style.color=deficit?'var(--red)':'var(--green)';
+  const sfEl=gid('sum-free');if(sfEl)sfEl.style.color=free<0?'var(--red)':'var(--green)';
+  setText('fix-total',fmt(fix));setText('var-total',fmt(vari));
+
+  // Progress bars
+  const pb=gid('pbars');
+  if(pb&&sal>0){
+    const bars=[
+      {l:'Koszty stałe',v:fix,c:'var(--yellow)'},
+      {l:'Koszty zmienne',v:vari,c:'var(--red)'},
+      {l:'Oszczędności',v:sav,c:'var(--blue)'},
+      {l:'Wolne środki',v:Math.max(0,free),c:'#fff'},
+    ];
+    pb.innerHTML=bars.map(b=>{
+      const p=Math.min(100,(b.v/sal*100)).toFixed(1);
+      return `<div class="pbar-item"><div class="pbar-hdr"><span class="pbar-name">${b.l}</span><span class="pbar-val">${fmt(b.v)} · ${p}%</span></div><div class="pbar-track"><div class="pbar-fill" style="width:${p}%;background:${b.c}"></div></div></div>`;
+    }).join('');
+  }
+
+  // Savings %
+  const sp=gid('sav-pct');if(sp)sp.textContent=sal>0&&sav>0?`= ${pct}% Twojego wynagrodzenia`:'';
+
+  // Report
+  setText('rep-month',MONTHS[curM]+' '+curY);
+  setText('rep-sal',fmt(sal));setText('rep-fix',fmt(fix));setText('rep-var',fmt(vari));setText('rep-total',fmt(tot));
+  setText('rep-rem',fmt(rem));const rrEl=gid('rep-rem');if(rrEl)rrEl.style.color=deficit?'var(--red)':'var(--green)';
+  setText('rep-sav',fmt(sav));setText('rep-pct',pct+'%');setText('rep-free',fmt(free));
+  const rc=gid('rep-costs');
+  if(rc){
+    const allCosts=[...(d.fixedCosts||[]),...(d.variableCosts||[])].filter(c=>c.name&&parseFloat(c.amount)>0);
+    rc.innerHTML=allCosts.length?'<div style="margin-bottom:4px;font-weight:700;color:var(--text2)">Szczegóły wydatków:</div>'+allCosts.map(c=>`<div style="display:flex;justify-content:space-between"><span>${esc(c.name)}</span><span style="color:#fff">${fmt(parseFloat(c.amount))}</span></div>`).join(''):'';
+  }
+
+  // Card URL
+  const cu=gid('card-url');if(cu)cu.textContent=window.location.href.split('?')[0];
+}
+
+function setText(id,v){const el=gid(id);if(el)el.textContent=v;}
+
+function loadPage(){
+  const d=getMD();
+  const si=gid('sal-inp');if(si)si.value=d.salary||'';
+  const svi=gid('sav-inp');if(svi)svi.value=d.savedAmount||'';
+  const ni=gid('note-area');if(ni)ni.value=d.note||'';
+  renderCosts('fixed');renderCosts('variable');
+  setText('monthLabel',MONTHS[curM]+' '+curY);
+  recalc();
+}
+
+function renderCosts(type){
+  const d=getMD();
+  const costs=type==='fixed'?d.fixedCosts:d.variableCosts;
+  const el=gid(type==='fixed'?'fixed-list':'var-list');
+  if(!el)return;
+  el.innerHTML=(costs||[]).map((c,i)=>`<div class="crow">
+    <input class="inp cname" type="text" placeholder="Nazwa" value="${esc(c.name)}" oninput="updCost('${type}',${i},'name',this.value)"/>
+    <input class="inp camt" type="number" inputmode="decimal" placeholder="0" value="${c.amount||''}" oninput="updCost('${type}',${i},'amount',this.value)"/>
+    <button class="dbtn" onclick="remCost('${type}',${i})">✕</button>
+  </div>`).join('');
+}
+
+function updCost(type,idx,field,val){
+  const d=getMD();
+  const costs=[...(type==='fixed'?d.fixedCosts:d.variableCosts)];
+  costs[idx]={...costs[idx],[field]:val};
+  setMD(type==='fixed'?{fixedCosts:costs}:{variableCosts:costs});
+}
+function addCost(type){
+  const d=getMD();
+  const costs=[...(type==='fixed'?d.fixedCosts:d.variableCosts),{id:Date.now(),name:'',amount:''}];
+  setMD(type==='fixed'?{fixedCosts:costs}:{variableCosts:costs});
+  renderCosts(type);
+  setTimeout(()=>{const inputs=gid(type==='fixed'?'fixed-list':'var-list').querySelectorAll('.cname');inputs[inputs.length-1]?.focus();},100);
+}
+function remCost(type,idx){
+  const d=getMD();
+  const costs=[...(type==='fixed'?d.fixedCosts:d.variableCosts)];
+  costs.splice(idx,1);
+  setMD(type==='fixed'?{fixedCosts:costs}:{variableCosts:costs});
+  renderCosts(type);
+}
+function saveSalary(){setMD({salary:gid('sal-inp').value});}
+function saveSaved(){setMD({savedAmount:gid('sav-inp').value});}
+function saveNote(){setMD({note:gid('note-area').value});}
+
+function changeMonth(dir){
+  curM+=dir;
+  if(curM<0){curM=11;curY--;}if(curM>11){curM=0;curY++;}
+  chatHistory=[];
+  const cw=gid('chat-wrap');
+  if(cw)cw.innerHTML='<div class="chat-bubble ai">Cześć! Jestem Twoim asystentem finansowym. Wpisz pytanie o swój budżet lub użyj skrótów powyżej. 💬</div>';
+  loadPage();
+}
+
+function switchTab(tab){
+  curTab=tab;
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active',['overview','income','fixed','variable','ai','report','card'][i]===tab);
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  gid('page-'+tab).classList.add('active');
+  const rb=gid('bbar-right');
+  if(tab==='ai'){rb.textContent='✨ Analizuj budżet';rb.onclick=()=>{quickQ('Jak wygląda mój budżet? Podaj konkretne liczby i ocenę.');};}
+  else{rb.textContent='💳 Dodaj wydatek';rb.onclick=mainAction;}
+  if(tab==='fixed')renderCosts('fixed');
+  if(tab==='variable')renderCosts('variable');
+  recalc();
+}
+
+function mainAction(){gid('qa-modal').style.display='flex';setTimeout(()=>gid('qa-name')?.focus(),300);}
+function closeQA(){gid('qa-modal').style.display='none';}
+function confirmQA(){
+  const name=gid('qa-name').value.trim();
+  const amt=gid('qa-amt').value;
+  if(!name||!amt){return;}
+  const d=getMD();
+  const costs=[...d.variableCosts,{id:Date.now(),name,amount:amt}];
+  setMD({variableCosts:costs});
+  gid('qa-name').value='';gid('qa-amt').value='';
+  closeQA();
+  renderCosts('variable');
+  // Flash feedback
+  const fb=gid('card-feedback');
+  if(fb){fb.textContent=`✓ Dodano: ${name} — ${fmt(parseFloat(amt))}`;setTimeout(()=>fb.textContent='',3000);}
+}
+
+function addCardExpense(){
+  const name=gid('card-name').value.trim();
+  const amt=gid('card-amt').value;
+  const type=gid('card-type').value;
+  if(!name||!amt){gid('card-feedback').textContent='⚠️ Wpisz nazwę i kwotę';return;}
+  const d=getMD();
+  if(type==='fixed'){
+    const costs=[...d.fixedCosts,{id:Date.now(),name,amount:amt}];
+    setMD({fixedCosts:costs});
+  }else{
+    const costs=[...d.variableCosts,{id:Date.now(),name,amount:amt}];
+    setMD({variableCosts:costs});
+  }
+  gid('card-name').value='';gid('card-amt').value='';
+  const fb=gid('card-feedback');
+  fb.textContent=`✓ Dodano: ${name} — ${fmt(parseFloat(amt))}`;
+  setTimeout(()=>fb.textContent='',3000);
+}
+
+// AI CHAT
+function buildContext(){
+  const d=getMD();
+  const sal=parseFloat(d.salary)||0;
+  const fix=(d.fixedCosts||[]).reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+  const vari=(d.variableCosts||[]).reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+  const tot=fix+vari;
+  const rem=sal-tot;
+  const sav=parseFloat(d.savedAmount)||0;
+  const pct=sal>0?(sav/sal*100).toFixed(1):0;
+  const fixDetails=(d.fixedCosts||[]).filter(c=>c.name&&parseFloat(c.amount)>0).map(c=>`${c.name}: ${parseFloat(c.amount)}zł`).join(', ');
+  const varDetails=(d.variableCosts||[]).filter(c=>c.name&&parseFloat(c.amount)>0).map(c=>`${c.name}: ${parseFloat(c.amount)}zł`).join(', ');
+  const hist=Object.entries(allData).filter(([k])=>k!==mk()).slice(-3).map(([k,dd])=>{
+    const s=parseFloat(dd.salary)||0;const sv=parseFloat(dd.savedAmount)||0;
+    const f=(dd.fixedCosts||[]).reduce((x,c)=>x+(parseFloat(c.amount)||0),0);
+    const v=(dd.variableCosts||[]).reduce((x,c)=>x+(parseFloat(c.amount)||0),0);
+    return `${k}: wynagrodzenie ${s}zł, wydatki ${f+v}zł, odłożono ${sv}zł (${s>0?(sv/s*100).toFixed(1):0}%)`;
+  }).join('\n');
+  return `Miesiąc: ${MONTHS[curM]} ${curY}
+Wynagrodzenie: ${sal}zł
+Koszty stałe: ${fix}zł (${fixDetails||'brak'})
+Koszty zmienne: ${vari}zł (${varDetails||'brak'})
+Łączne wydatki: ${tot}zł
+Pozostało: ${rem}zł
+Odłożono: ${sav}zł (${pct}%)
+Na życie: ${rem-sav}zł
+Historia: ${hist||'brak'}`;
+}
+
+function aiReply(userMsg){
+  const cw=gid('chat-wrap');
+  // Add user bubble
+  const ub=document.createElement('div');
+  ub.className='chat-bubble user';ub.textContent=userMsg;cw.appendChild(ub);
+  // Add loading
+  const lb=document.createElement('div');
+  lb.className='chat-bubble ai loading';lb.textContent='⏳ Analizuję...';cw.appendChild(lb);
+  cw.scrollTop=cw.scrollHeight;
+
+  // Build history for context
+  chatHistory.push({role:'user',content:userMsg});
+
+  setTimeout(()=>{
+    const ctx=buildContext();
+    const d=getMD();
+    const sal=parseFloat(d.salary)||0;
+    const fix=(d.fixedCosts||[]).reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+    const vari=(d.variableCosts||[]).reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+    const rem=sal-fix-vari;
+    const sav=parseFloat(d.savedAmount)||0;
+    const pct=sal>0?(sav/sal*100).toFixed(1):0;
+    const freePct=sal>0?((rem/sal)*100):0;
+    const expPct=sal>0?((fix+vari)/sal*100):0;
+
+    let reply='';
+    const q=userMsg.toLowerCase();
+
+    if(q.includes('ile mogę wydać')||q.includes('ile zostało')){
+      const free=rem-sav;
+      reply=`💡 Po opłaceniu wszystkich wydatków (${fmt(fix+vari)}) zostaje Ci ${fmt(rem)}.\n\nPo odłożeniu ${fmt(sav)} na oszczędności masz do dyspozycji ${fmt(free)} na bieżące życie.\n\nTo ${sal>0?(free/sal*100).toFixed(1):0}% Twojego wynagrodzenia.`;
+    } else if(q.includes('odkładać')||q.includes('oszczędz')){
+      let targetPct, rec;
+      if(freePct<=5){targetPct=0;rec='Niestety budżet jest bardzo napięty. Skup się najpierw na redukcji wydatków.';}
+      else if(freePct<=15){targetPct=Math.round(freePct*0.3*10)/10;rec='Budżet jest ciasny — odkładaj tyle ile możesz, nawet małe kwoty się liczą.';}
+      else if(freePct<=30){targetPct=Math.round(freePct*0.45*10)/10;rec='Dobra sytuacja. Regularne odkładanie tej kwoty zbuduje solidną poduszkę finansową.';}
+      else{targetPct=Math.round(freePct*0.55*10)/10;rec='Świetna sytuacja! Możesz sobie pozwolić na wyższe oszczędności.';}
+      const sugAmt=sal*targetPct/100;
+      reply=`💰 Sugeruję odkładać: ${fmt(sugAmt)} miesięcznie\n= ${targetPct}% Twojego wynagrodzenia (${fmt(sal)})\n\n${rec}\n\nW skali roku uzbierasz: ${fmt(sugAmt*12)} 🎯`;
+    } else if(q.includes('jak wygląda')||q.includes('ocena')||q.includes('analiz')){
+      let ocena='', emoji='';
+      if(!sal){ocena='Nie wpisałeś jeszcze wynagrodzenia — dodaj je w zakładce Dochód.';emoji='⚠️';}
+      else if(rem<0){ocena='Wydatki przekraczają wynagrodzenie! To sytuacja kryzysowa wymagająca natychmiastowej redukcji kosztów.';emoji='🔴';}
+      else if(expPct>85){ocena='Bardzo wysoki poziom wydatków (ponad 85% dochodu). Mało miejsca na oszczędności — warto przejrzeć koszty zmienne.';emoji='🟡';}
+      else if(expPct>70){ocena='Umiarkowany budżet. Wydatki pochłaniają '+expPct.toFixed(0)+'% dochodu. Jest pole do optymalizacji.';emoji='🟡';}
+      else{ocena='Dobra sytuacja finansowa! Wydatki to '+expPct.toFixed(0)+'% dochodu, pozostaje '+freePct.toFixed(0)+'% wolnych środków.';emoji='🟢';}
+      reply=`${emoji} Ocena budżetu: ${MONTHS[curM]} ${curY}\n\n${ocena}\n\n📊 Wynagrodzenie: ${fmt(sal)}\n📉 Wydatki: ${fmt(fix+vari)} (${expPct.toFixed(1)}%)\n✅ Pozostało: ${fmt(rem)} (${freePct.toFixed(1)}%)\n🏦 Odłożono: ${fmt(sav)} (${pct}%)`;
+    } else if(q.includes('koszty stałe')){
+      const fixPct=sal>0?(fix/sal*100).toFixed(1):0;
+      let ocena='';
+      if(fixPct>50)ocena='Koszty stałe są bardzo wysokie — przekraczają połowę wynagrodzenia. Warto sprawdzić czy można zredukować np. abonamenty.';
+      else if(fixPct>35)ocena='Koszty stałe są na średnim poziomie. Typowy zdrowy poziom to poniżej 35%.';
+      else ocena='Koszty stałe są pod kontrolą — poniżej 35% wynagrodzenia. Dobry wynik!';
+      reply=`🏠 Koszty stałe: ${fmt(fix)} (${fixPct}% wynagrodzenia)\n\n${ocena}`;
+    } else if(q.includes('jak oszczędz')||q.includes('wskazówk')){
+      const d2=getMD();
+      const bigVar=(d2.variableCosts||[]).sort((a,b)=>(parseFloat(b.amount)||0)-(parseFloat(a.amount)||0)).slice(0,2);
+      let tip='';
+      if(bigVar.length>0)tip=`\n\n💡 Twój największy koszt zmienny to "${bigVar[0].name}" (${fmt(parseFloat(bigVar[0].amount))}). Redukcja o 10% to ${fmt(parseFloat(bigVar[0].amount)*0.1)} miesięcznie oszczędności.`;
+      reply=`Praktyczne sposoby na oszczędzanie:\n\n1️⃣ Ustaw automatyczny przelew na konto oszczędnościowe w dniu wypłaty\n2️⃣ Przejrzyj subskrypcje — czy wszystkie używasz?\n3️⃣ Zasada 24h — przed zakupem powyżej 100zł odczekaj dobę\n4️⃣ Planuj zakupy spożywcze z listą — ogranicza impulsywne wydatki${tip}`;
+    } else {
+      // Fallback — ogólna analiza
+      reply=`Pytanie: "${userMsg}"\n\n${sal>0?`Twoje dane: wynagrodzenie ${fmt(sal)}, wydatki ${fmt(fix+vari)}, pozostało ${fmt(rem)} (${freePct.toFixed(1)}%).\n\nCzy chodzi Ci o analizę budżetu, sugestię oszczędności, czy ocenę wydatków? Użyj przycisków skrótów lub zapytaj precyzyjniej.`:'Nie wpisałeś jeszcze danych. Zacznij od zakładki Dochód — wpisz wynagrodzenie, a potem dodaj wydatki w zakładkach Stałe i Zmienne.'}`;
+    }
+
+    chatHistory.push({role:'assistant',content:reply});
+    lb.className='chat-bubble ai';
+    lb.textContent=reply;
+    cw.scrollTop=cw.scrollHeight;
+  },600);
+}
+
+function sendChat(){
+  const inp=gid('chat-inp');
+  const msg=inp.value.trim();
+  if(!msg)return;
+  inp.value='';
+  aiReply(msg);
+}
+
+function quickQ(q){
+  switchTab('ai');
+  aiReply(q);
+}
+
+function checkReminder(){
+  const today=new Date();
+  const last=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+  if(today.getDate()>=last-2){
+    const key=`rem_${curY}-${String(curM+1).padStart(2,'0')}`;
+    if(!localStorage.getItem(key))gid('rem-modal').style.display='flex';
+  }
+}
+function dismissRem(){
+  const today=new Date();
+  localStorage.setItem(`rem_${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`,'1');
+  gid('rem-modal').style.display='none';
+}
+
+// URL params — quick add from shortcut
+function checkURLParams(){
+  const p=new URLSearchParams(window.location.search);
+  const amt=p.get('amt'), name=p.get('name');
+  if(amt&&parseFloat(amt)>0){
+    gid('qa-amt').value=amt;
+    if(name)gid('qa-name').value=name;
+    gid('qa-modal').style.display='flex';
+  }
+}
+
+// INIT
+allData=ld('bgt3',{});
+loadPage();
+setTimeout(checkReminder,2000);
+setTimeout(checkURLParams,1800);
+</script>
+</body>
+</html>
